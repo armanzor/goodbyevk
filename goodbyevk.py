@@ -33,6 +33,7 @@ def get_photos_list(offset):
                               '&count=' + COUNT +
                               '&offset=' + str(offset)).json()
     return photos_list
+# curl -s "https://api.vk.com/method/photos.get?owner_id=owner&v=5.81&access_token=token&album_id=-15&photo_sizes=1&rev=1&count=1&offset=9966" | jq .
 
 def main():
     usage()
@@ -40,8 +41,8 @@ def main():
     print('Offset:', offset)
     os.makedirs(PICTURES_DIR, exist_ok=True)
     photos_list = get_photos_list(offset)
+    photo_url_list = []
     while photos_list['response']['items'] != []:
-        photo_url_list = []
         for photo in photos_list['response']['items']:
             exitFlag = False
             for type in PHOTO_TYPES:
@@ -52,15 +53,16 @@ def main():
                         break
                 if exitFlag == True:
                     break
-        for url in photo_url_list:
-            file_name = url.split('/')[-1].split('?')[0]
-            if os.path.exists(PICTURES_DIR + file_name):
-                break
-            with open(PICTURES_DIR + file_name, 'wb') as photo:
-                photo.write(requests.get(url).content)
         offset += 1
         print('Offset:', offset)
         photos_list = get_photos_list(offset)
+    print('Extracted', len(photo_url_list), 'URLs')
+    for url in photo_url_list:
+        file_name = url.split('/')[-1].split('?')[0]
+        if os.path.exists(PICTURES_DIR + file_name):
+            break
+        with open(PICTURES_DIR + file_name, 'wb') as photo:
+            photo.write(requests.get(url).content)
 
 if __name__ == "__main__":
     main()
